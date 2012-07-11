@@ -26,8 +26,8 @@ module LazyHighCharts
     def build_html_output(type, placeholder, object, &block)
       options_collection =  [ generate_json_from_hash(object.options) ]
       
-      options_collection << %|"series": #{object.data.to_json}|
-      
+      options_collection << %|"series": [#{generate_json_from_array(object.data)}]|
+
       graph =<<-EOJS
       <script type="text/javascript">
       (function() {
@@ -63,6 +63,20 @@ module LazyHighCharts
             %|"#{k}": #{value}|
           else
             %|"#{k}": #{value.to_json}|
+          end
+        end
+      end.flatten.join(',')
+    end
+
+    def generate_json_from_array array
+      array.map do |value|
+        if value.is_a? Hash
+          %|{ #{generate_json_from_hash(value)} }|
+        else
+          if value.respond_to?(:js_code) && value.js_code?
+            %|#{value}|
+          else
+            %|#{value.to_json}|
           end
         end
       end.flatten.join(',')
